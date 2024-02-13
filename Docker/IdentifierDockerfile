@@ -1,0 +1,26 @@
+# build with `docker build -t malware_identifier -f Docker/IdentifierDockerfile .` from Project directory
+# run using `docker run -i -t malware_identifier bash`
+
+
+# get base ubuntu (bionic; 18.04) image
+FROM ubuntu:bionic
+
+COPY ../I_F_Identifier/Checking_Result.py /MalwareIdentifier/
+COPY ../I_F_Identifier/ThresholdRandomForest.py /MalwareIdentifier/
+COPY ../I_F_Identifier/test_article.py /MalwareIdentifier/
+COPY ../I_F_Identifier/malware_apt.h5 /MalwareIdentifier/
+COPY ../I_F_Identifier/malware_non_apt.h5 /MalwareIdentifier/
+
+# do these separately so they can be cached as separate steps; when rebuilding image: if python stuff
+# fails this will be saved and prevent having to upgrade during every build
+RUN apt update 
+RUN apt upgrade -y
+
+# Necessary python packages with specific versions
+RUN <<EOF
+apt install -y python3.7 python3-pip
+pip install pandas=0.25.3, numpy=1.24.0, sklearn, pycm, tables
+EOF
+
+
+#  CMD [ "python3", "./MalwareIdentifier/test_article.py" ]
