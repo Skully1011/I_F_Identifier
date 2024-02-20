@@ -4,23 +4,43 @@
 
 # get base ubuntu (bionic; 18.04) image
 FROM ubuntu:bionic
+# USER root
 
-COPY ../I_F_Identifier/Checking_Result.py /MalwareIdentifier/
-COPY ../I_F_Identifier/ThresholdRandomForest.py /MalwareIdentifier/
-COPY ../I_F_Identifier/test_article.py /MalwareIdentifier/
-COPY ../I_F_Identifier/malware_apt.h5 /MalwareIdentifier/
-COPY ../I_F_Identifier/malware_non_apt.h5 /MalwareIdentifier/
+COPY ./Checking_Result.py /MalwareIdentifier/
+COPY ./ThresholdRandomForest.py /MalwareIdentifier/
+COPY ./test_article.py /MalwareIdentifier/
+COPY ./malware_apt.h5 /MalwareIdentifier/
+COPY ./malware_non_apt.h5 /MalwareIdentifier/
 
 # do these separately so they can be cached as separate steps; when rebuilding image: if python stuff
 # fails this will be saved and prevent having to upgrade during every build
 RUN apt update 
 RUN apt upgrade -y
+RUN apt install -y curl
+
+# get conda for installation of pytables
+# RUN cd /tmp
+# RUN curl -O https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh
+# RUN bash Miniconda3-4.5.11-Linux-x86_64.sh -b
+# RUN conda init
+# RUN source ~/.bashrc
+# RUN conda create --name mal_ident_env python=3.7
 
 # Necessary python packages with specific versions
-RUN <<EOF
-apt install -y python3.7 python3-pip
-pip install pandas=0.25.3, numpy=1.24.0, sklearn, pycm, tables
-EOF
+RUN apt install -y python3 python3-pip
+# RUN apt install hdf5
+RUN python3 -m pip install pandas==0.25.3 
+RUN python3 -m pip install numpy==1.19.5
+RUN python3 -m pip install scikit-learn==0.20 
+RUN python3 -m pip install pycm
+RUN python3 -m pip install packaging
+RUN python3 -m pip install h5py
+RUN export HDF5_DIR=/opt/local
+# RUN conda install pytables
+RUN  python3 -m pip install tables 
+#/usr/local/lib/python3.6/dist-packagesh5py.libs/
+# RUN <<EOF
+# EOF
 
 
 #  CMD [ "python3", "./MalwareIdentifier/test_article.py" ]
