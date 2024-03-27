@@ -31,13 +31,18 @@ def test_oc(apt_df, malware_df, folder):
     clf = LinearDiscriminantAnalysis(solver='svd', )
     lda_time_list = []
     logging.info("LDA Phase")
+    # Data preprocessing using LDA?
     for i in range(0, 10):
-        lda_time = time.time()
-        X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], 1), apt_df['apt']))
+        lda_start_time = time.time()
+        # create sub df from apt_df
+        # drop the apt and md5 columns from the df
+        # fit transform the df using LDA to standardize input data
+        X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], axis=1), apt_df["apt"]))
         lda_end_train_time = time.time()
-        lda_end_time = lda_end_train_time - lda_time
+        lda_end_time = lda_end_train_time - lda_start_time
         lda_time_list.append(lda_end_time)
-    X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], 1), apt_df['apt']))
+    # use fit transformed data for training
+    X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], axis=1), apt_df["apt"]))
     X_LDA = X_LDA.add_prefix('col_')
     features_list = X_LDA.columns.values
     df = X_LDA.assign(apt=apt_df["apt"])
@@ -48,8 +53,8 @@ def test_oc(apt_df, malware_df, folder):
     apt_binarized = pd.concat([df, binarized_class], axis=1, sort=False).assign(apt=apt_df["apt"]).reset_index(
         drop=True)
 
-    noAPT_LDA = pd.DataFrame(clf.transform(malware_df.drop(["md5"], 1))).add_prefix("col_")
-    # noAPT_LDA = pd.concat([noAPT_LDA, pd.DataFrame(columns=lb.classes_)], sort=False).fillna(-1)
+    # noAPT_LDA = pd.DataFrame(clf.transform(malware_df.drop(["md5"], axis=1))).add_prefix("col_")
+    noAPT_LDA = pd.DataFrame(clf.transform(malware_df.drop(["apt", "md5"], axis=1)))
     kf = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
     model_list = []
     time_data = pd.DataFrame(columns=["apt_name","train","test_apt", "test_malware"])
@@ -74,7 +79,7 @@ def test_oc(apt_df, malware_df, folder):
             X_test = X.iloc[test_index]
             current_contamination = CONFIG_OC[apt_name][0]
             clf = IsolationForest(contamination=current_contamination, n_estimators=CONFIG_OC[apt_name][1],
-                                  random_state=42, behaviour="new",
+                                  random_state=42,
                                   n_jobs=cpu_count() - 1)
             clf.fit(X_train, y_train[y_train == 1])
             end_train_time = time.time()
@@ -92,7 +97,7 @@ def test_oc(apt_df, malware_df, folder):
             current_pred_dict[apt_name] = apt_pred_dict
             end_test_malware_time = time.time()
             end_test_malware = end_test_malware_time - end_test_apt_time
-            time_data = time_data.append({"apt_name":apt_name,"train":end_train,"test_apt":end_test_apt, "test_malware":end_test_malware}, ignore_index=True)
+            time_data = pd.concat([time_data, pd.DataFrame({"apt_name":[apt_name],"train":[end_train],"test_apt":[end_test_apt], "test_malware":[end_test_malware]})], ignore_index=True)
 
         model_list.append(current_model_dict)
         prediction_list.append(current_pred_dict)
@@ -112,7 +117,7 @@ def check_parameters(apt_df):
     apt_list = list(set(apt_df['apt']))
     clf = LinearDiscriminantAnalysis(solver='svd')
     logging.info("LDA Phase")
-    X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], 1), apt_df['apt']))
+    X_LDA = pd.DataFrame(clf.fit_transform(apt_df.drop(["apt", "md5"], axis=1), apt_df['apt']))
     X_LDA = X_LDA.add_prefix('col_')
     features_list = X_LDA.columns.values
     df = X_LDA.assign(apt=apt_df["apt"])
@@ -162,7 +167,7 @@ def check_parameters(apt_df):
 def test_rf(apt_df, malware_df, folder):
     logging.info("ThresholdRandomForest test - output in " + str(folder))
     malware_df["apt"] = ""
-    X = apt_df.drop(["apt"], 1)
+    X = apt_df.drop(["apt"], axis=1)
     y = apt_df['apt']
     logging.info("Binarizing Label Phase")
     lb = LabelBinarizer(neg_label=-1)
@@ -210,7 +215,7 @@ def test_rf(apt_df, malware_df, folder):
 
 
 def compute_best_six(apt_df):
-    X = apt_df.drop(["md5","apt"],1)
+    X = apt_df.drop(["md5","apt"], axis=1)
     y = apt_df['apt']
     y_true = []
     y_pred = []
@@ -265,7 +270,7 @@ def main():
     six_folder = folder + "6_classes/"
     if not os.path.exists(six_folder):
         os.makedirs(six_folder)
-    test_rf(reduced_apt_df[reduced_apt_df["apt"].isin(selected_class)].reset_index(drop=True), reduced_malware_df, six_folder)
+    # test_rf(reduced_apt_df[reduced_apt_df["apt"].isin(selected_class)].reset_index(drop=True), reduced_malware_df, six_folder)
     test_oc(reduced_apt_df[reduced_apt_df["apt"].isin(selected_class)].reset_index(drop=True), reduced_malware_df, six_folder)
     compute_result(six_folder)
     time_data(six_folder)
@@ -273,7 +278,7 @@ def main():
     all_folder = folder + "all_classes/"
     if not os.path.exists(all_folder):
         os.makedirs(all_folder)
-    test_rf(reduced_apt_df, reduced_malware_df, all_folder)
+    # test_rf(reduced_apt_df, reduced_malware_df, all_folder)
     test_oc(reduced_apt_df, reduced_malware_df, all_folder)
     compute_result(all_folder)
     time_data(all_folder)

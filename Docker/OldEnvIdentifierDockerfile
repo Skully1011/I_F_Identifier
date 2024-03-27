@@ -16,31 +16,15 @@ COPY ./malware_non_apt.h5 /MalwareIdentifier/
 # fails this will be saved and prevent having to upgrade during every build
 RUN apt update 
 RUN apt upgrade -y
-RUN apt install -y curl
-
-# get conda for installation of pytables
-# RUN cd /tmp
-# RUN curl -O https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh
-# RUN bash Miniconda3-4.5.11-Linux-x86_64.sh -b
-# RUN conda init
-# RUN source ~/.bashrc
-# RUN conda create --name mal_ident_env python=3.7
 
 # Necessary python packages with specific versions
 RUN apt install -y python3 python3-pip
-# RUN apt install hdf5
 RUN python3 -m pip install pandas==0.25.3 
 RUN python3 -m pip install numpy==1.19.5
 RUN python3 -m pip install scikit-learn==0.20 
 RUN python3 -m pip install pycm
 RUN python3 -m pip install packaging
-RUN python3 -m pip install h5py
 RUN export HDF5_DIR=/opt/local
-# RUN conda install pytables
 RUN  python3 -m pip install tables 
-#/usr/local/lib/python3.6/dist-packagesh5py.libs/
-# RUN <<EOF
-# EOF
-
 
 #  CMD [ "python3", "./MalwareIdentifier/test_article.py" ]
