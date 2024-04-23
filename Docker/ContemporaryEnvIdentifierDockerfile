@@ -1,25 +1,15 @@
 # build with `docker build -t malware_identifier -f Docker/ContemporaryEnvIdentifierDockerfile .` from Project directory
-# run using `docker run -i -t --name="malware_identifier" malware_identifier  bash`
+# run using `docker run -i -t --name="malware_identifier" --rm malware_identifier  bash`
 
 # get base ubuntu (bionic; 18.04) image
 FROM ubuntu
 # USER root
-
-COPY ./Checking_Result.py /MalwareIdentifier/
-COPY ./ThresholdRandomForest.py /MalwareIdentifier/
-COPY ./test_article.py /MalwareIdentifier/
-COPY ./selected_columns.json /MalwareIdentifier/
-COPY ./selected_class.json /MalwareIdentifier/
-COPY ./selected_param.json /MalwareIdentifier/
-COPY ./malware_apt.h5 /MalwareIdentifier/
-COPY ./malware_non_apt.h5 /MalwareIdentifier/
-
 WORKDIR /MalwareIdentifier/
 
 # do these separately so they can be cached as separate steps; when rebuilding image: if python stuff
 # fails this will be saved and prevent having to upgrade during every build
 RUN apt update 
-RUN apt upgrade -y
+# RUN apt upgrade -y
 
 # utilities for working in the container
 RUN apt install -y vim
@@ -31,15 +21,26 @@ RUN python3 -m pip install numpy
 RUN python3 -m pip install scikit-learn 
 RUN python3 -m pip install pycm
 RUN python3 -m pip install packaging
-RUN  python3 -m pip install tables 
+RUN  python3 -m pip install tables
+# alternatively...
+# RUN pip install -r requirements.txt
+
+# copy in files last to prevent rebuilding update and installation layers
+COPY ./Checking_Result.py ./
+COPY ./ThresholdRandomForest.py ./
+COPY ./test_article.py ./
+COPY ./selected_columns.json ./
+COPY ./selected_class.json ./
+COPY ./selected_param.json ./
+COPY ./dataset/IFIdentifierDataset/malware_apt.h5 ./
+COPY ./dataset/IFIdentifierDataset/malware_non_apt.h5 ./
+
+COPY ./dataset/AndroidMalwareDetection/TUANDROMD.csv ./
+COPY ./TuandromdSelectedColumns.json ./
 
 # generate requirements.txt for documentation purposes
-# RUN  python3 -m pip install pipreqs 
-# RUN  pipreqs .
+# NOTE when adding packages to the container the requirements should be extracted to use for pip installation
+# docker cp dummy:/path/to/file /dest/to/file
 RUN python3 -m pip freeze > requirements.txt
-
-# RUN <<EOF
-# EOF
-
 
 CMD [ "python3", "test_article.py" ]
