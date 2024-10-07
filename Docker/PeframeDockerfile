@@ -12,18 +12,20 @@ RUN apt update
 # utilities for working in the container
 RUN apt install -y vim
 RUN apt install -y git
+# Clone peframe git repo early to avoid future layer rebuilding
+RUN git clone https://github.com/guelfoweb/peframe.git
 
 # download and install peframe and dependencies
 # requires python >= 3.6.6
 RUN apt install -y python3 python3-pip python3-setuptools
 RUN python3 -m pip install --upgrade pip setuptools
 RUN apt install -y libssl-dev 
+RUN apt install -y libmagic-dev
 # peframe python dependencies
 RUN python3 -m pip install swig
-# RUN python3 -m pip install setuptools
-# RUN python3 -m pip install m2crypto
+RUN python3 -m pip install python-magic
 # now actually install peframe
-RUN git clone https://github.com/guelfoweb/peframe.git
+
 WORKDIR /peframe/
 RUN python3 setup.py install
 USER root
@@ -35,19 +37,9 @@ RUN /peframe/install.sh
 
 # copy in files last to prevent rebuilding update and installation layers when the
 # source code and config files are updated
-# COPY ./Checking_Result.py .
-# COPY ./ThresholdRandomForest.py .
-# COPY ./test_article.py .
-# COPY ./selected_columns.json .
-# COPY ./selected_class.json .
-# COPY ./selected_param.json .
-# COPY ./dataset/IFIdentifierDataset/malware_apt.h5 .
-# COPY ./dataset/IFIdentifierDataset/malware_non_apt.h5 .
-# new additions
-# COPY ./dataset/AndroidMalwareDetection/TUANDROMD.csv .
-# COPY ./tuandromd_selected_columns.json .
 
 # generate requirements.txt for documentation purposes
 # NOTE when adding new packages to the container the requirements should be extracted to use for pip installation
-# `docker cp malware_identifier:/MalwareIdentifier/requirements.txt .`
+# `docker cp peframe:/peframe/requirements.txt ./Requirements/Peframe`
+WORKDIR /peframe/peframe
 RUN python3 -m pip freeze > requirements.txt
