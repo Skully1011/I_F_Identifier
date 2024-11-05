@@ -1,4 +1,4 @@
-# build with `docker build -t malware_identifier -f Docker/ContemporaryEnvIdentifierDockerfile .` from Project directory
+# build with `docker build -t malware_identifier -f Docker/I_F_IdentifierDockerfile .` from Project directory
 # run using `docker run -i -t --name="malware_identifier" --rm malware_identifier  bash`
 
 # get base ubuntu (bionic; 18.04) image
